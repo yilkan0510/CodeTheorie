@@ -7,24 +7,37 @@
 using namespace std;
 
 // Functie om de kolommen naar een bestand te schrijven
-void writeColumnsToFile(const vector<string>& columns, const string& filename) {
+void writeColumnsToFile(const vector<string>& columns, const string& filename, int num_columns) {
     ofstream outFile(filename);
     if (!outFile.is_open()) {
         cout << "Error: Kon output file niet aanmaken." << endl;
         return;
     }
 
-    int num_rows = columns[0].length();
+    // Bepaal het aantal rijen op basis van de eerste kolom (ervan uitgaande dat alle kolommen even lang zijn)
+    int num_rows = columns.empty() ? 0 : columns[0].length();
 
     // Header
-    outFile << "KOLOM 0    KOLOM 1    KOLOM 2    KOLOM 3    KOLOM 4    KOLOM 5    KOLOM 6    KOLOM 7    KOLOM 8    KOLOM 9" << endl;
-    outFile << "----------------------------------------------------------------------------------------------------------" << endl;
+    for (int i = 0; i < num_columns; ++i) {
+        outFile << "KOLOM " << i << "    ";
+    }
+    outFile << endl;
+
+    for (int i = 0; i < num_columns; ++i) {
+        outFile << "-----------";
+    }
+    outFile << endl;
 
     // Loop door elke rij
     for (int i = 0; i < num_rows; ++i) {
         // Loop door elke kolom
-        for (int j = 0; j < columns.size(); ++j) {
-            outFile << columns[j][i] << "          ";
+        for (int j = 0; j < num_columns; ++j) {
+            // Controleer of de huidige rij en kolom geldig zijn
+            if (j < columns.size() && i < columns[j].length()) {
+                outFile << columns[j][i] << "          ";
+            } else {
+                outFile << "           "; // Lege ruimte voor kolommen met minder rijen
+            }
         }
         outFile << endl;
     }
@@ -47,14 +60,15 @@ int main() {
         cout << "File succesvol ingelezen!" << endl;
         cout << "Totaal aantal tekens: " << ciphertext.length() << endl;
 
-        int num_columns = 10;
+        // Pas hier het aantal kolommen aan
+        int num_columns = 9;
         vector<string> columns(num_columns);
 
         for (int i = 0; i < ciphertext.length(); ++i) {
             columns[i % num_columns] += ciphertext[i];
         }
 
-        writeColumnsToFile(columns, "../viginereplus/output_columns.txt");
+        writeColumnsToFile(columns, "../viginereplus/output_columns.txt", num_columns);
 
     } else {
         cout << "Error: Kon het bestand niet openen op pad: " << file_path << endl;
