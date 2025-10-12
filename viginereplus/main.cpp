@@ -3,71 +3,93 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include <algorithm>
 
 using namespace std;
 
-// Jouw writeColumnsToFile functie blijft ongewijzigd. Perfect voor visualisatie.
-void writeColumnsToFile(const vector<string>& columns, const string& filename, int num_columns) {
-    ofstream outFile(filename);
-    if (!outFile.is_open()) {
-        cout << "Error: Kon output file niet aanmaken." << endl;
-        return;
+string readFile(const string& filepath) {
+    ifstream file(filepath);
+    if (!file.is_open()) throw runtime_error("Kon bestand niet openen: " + filepath);
+    stringstream buffer;
+    buffer << file.rdbuf();
+    return buffer.str();
+}
+
+vector<vector<char>> textToMatrix(const string& text, int num_cols) {
+    int col_len = text.length() / num_cols;
+    vector<vector<char>> matrix(col_len, vector<char>(num_cols));
+
+    for (int col = 0; col < num_cols; ++col) {
+        for (int row = 0; row < col_len; ++row) {
+            matrix[row][col] = text[col * col_len + row];
+        }
     }
-    int num_rows = columns.empty() ? 0 : columns[0].length();
-    for (int i = 0; i < num_columns; ++i) {
-        outFile << "KOLOM " << i << "    ";
+    return matrix;
+}
+
+void processPermutation(const vector<vector<char>>& matrix, const vector<int>& order) {
+    static int count = 0;
+    if (++count % 100000 == 0) cout << "." << flush;
+}
+
+void writeColumnsToFile(const vector<vector<char>>& matrix, const string& filename) {
+    ofstream out(filename);
+    if (!out.is_open()) throw runtime_error("Kon output file niet aanmaken");
+
+    int num_cols = matrix[0].size();
+
+    // Header
+    for (int i = 0; i < num_cols; ++i) out << "KOLOM " << i << "    ";
+    out << endl;
+    for (int i = 0; i < num_cols; ++i) out << "-----------";
+    out << endl;
+
+    // Data
+    for (int r = 0; r < matrix.size(); ++r) {
+        for (int c = 0; c < num_cols; ++c) {
+            out << matrix[r][c] << "          ";
+        }
+        out << endl;
     }
-    outFile << endl;
-    for (int i = 0; i < num_columns; ++i) {
-        outFile << "-----------";
-    }
-    outFile << endl;
-    for (int i = 0; i < num_rows; ++i) {
-        for (int j = 0; j < num_columns; ++j) {
-            if (j < columns.size() && i < columns[j].length()) {
-                outFile << columns[j][i] << "          ";
-            } else {
-                outFile << "           ";
+    cout << "Kolommen weggeschreven naar " << filename << endl;
+}
+
+void generatePermutations(vector<vector<char>>& matrix) {
+    int num_cols = matrix[0].size();
+    vector<int> indices(num_cols);
+    for (int i = 0; i < num_cols; ++i) indices[i] = i;
+
+    int count = 0;
+    do {
+        vector<vector<char>> permuted(matrix.size(), vector<char>(num_cols));
+        for (int r = 0; r < matrix.size(); ++r) {
+            for (int c = 0; c < num_cols; ++c) {
+                permuted[r][c] = matrix[r][indices[c]];
             }
         }
-        outFile << endl;
-    }
-    cout << "Kolommen succesvol weggeschreven naar " << filename << endl;
+        processPermutation(permuted, indices);
+        count++;
+    } while (next_permutation(indices.begin(), indices.end()));
+
+    cout << "\nTotaal: " << count << " permutaties" << endl;
 }
 
 int main() {
-    string file_path = "../viginereplus/01-OPGAVE-viginereplus.txt";
+    try {
+        string text = readFile("../viginereplus/01-OPGAVE-viginereplus.txt");
+        cout << "Ingelezen: " << text.length() << " tekens" << endl;
 
-    ifstream file(file_path);
-    string ciphertext;
+        vector<vector<char>> matrix = textToMatrix(text, 10);
+        cout << "Matrix: " << matrix.size() << " x " << matrix[0].size() << endl;
 
-    if (file.is_open()) {
-        stringstream buffer;
-        buffer << file.rdbuf();
-        ciphertext = buffer.str();
-        file.close();
+        writeColumnsToFile(matrix, "../viginereplus/output_columns.txt");
 
-        cout << "File succesvol ingelezen!" << endl;
-        cout << "Totaal aantal tekens: " << ciphertext.length() << endl;
+        cout << "Genereren permutaties..." << endl;
+        generatePermutations(matrix);
 
-        int num_columns = 10;
-        vector<string> columns(num_columns);
-
-        // --- DIT IS DE ENIGE AANPASSING ---
-        // We verdelen de ciphertext nu in 10 blokken van 139 tekens.
-        int col_length = ciphertext.length() / num_columns;
-        for (int i = 0; i < num_columns; ++i) {
-            columns[i] = ciphertext.substr(i * col_length, col_length);
-        }
-        // ------------------------------------
-
-        // We gebruiken je bestaande functie om het resultaat te bekijken.
-        writeColumnsToFile(columns, "../viginereplus/output_columns.txt", num_columns);
-
-    } else {
-        cout << "Error: Kon het bestand niet openen op pad: " << file_path << endl;
+    } catch (const exception& e) {
+        cerr << "Error: " << e.what() << endl;
         return 1;
     }
-
     return 0;
 }
