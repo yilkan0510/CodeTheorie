@@ -16,7 +16,7 @@ string readFile(const string& filepath) {
 }
 
 vector<vector<char>> textToMatrix(const string& text, int num_cols) {
-    int col_len = text.length() / num_cols;
+    size_t col_len = text.length() / num_cols;
     vector<vector<char>> matrix(col_len, vector<char>(num_cols));
 
     for (int col = 0; col < num_cols; ++col) {
@@ -25,6 +25,16 @@ vector<vector<char>> textToMatrix(const string& text, int num_cols) {
         }
     }
     return matrix;
+}
+
+string matrixToText(const vector<vector<char>>& matrix) {
+    string text;
+    for (const auto& row : matrix) {
+        for (char c : row) {
+            text += c;
+        }
+    }
+    return text;
 }
 
 void processPermutation(const vector<vector<char>>& matrix, const vector<int>& order) {
@@ -36,7 +46,7 @@ void writeColumnsToFile(const vector<vector<char>>& matrix, const string& filena
     ofstream out(filename);
     if (!out.is_open()) throw runtime_error("Kon output file niet aanmaken");
 
-    int num_cols = matrix[0].size();
+    size_t num_cols = matrix[0].size();
 
     // Header
     for (int i = 0; i < num_cols; ++i) out << "KOLOM " << i << "    ";
@@ -45,21 +55,20 @@ void writeColumnsToFile(const vector<vector<char>>& matrix, const string& filena
     out << endl;
 
     // Data
-    for (int r = 0; r < matrix.size(); ++r) {
+    for (const auto & r : matrix) {
         for (int c = 0; c < num_cols; ++c) {
-            out << matrix[r][c] << "          ";
+            out << r[c] << "          ";
         }
         out << endl;
     }
     cout << "Kolommen weggeschreven naar " << filename << endl;
 }
 
-void generatePermutations(vector<vector<char>>& matrix) {
-    int num_cols = matrix[0].size();
+void generatePermutations(const vector<vector<char>>& matrix) {
+    size_t num_cols = matrix[0].size();
     vector<int> indices(num_cols);
     for (int i = 0; i < num_cols; ++i) indices[i] = i;
 
-    int count = 0;
     do {
         vector<vector<char>> permuted(matrix.size(), vector<char>(num_cols));
         for (int r = 0; r < matrix.size(); ++r) {
@@ -68,10 +77,7 @@ void generatePermutations(vector<vector<char>>& matrix) {
             }
         }
         processPermutation(permuted, indices);
-        count++;
     } while (next_permutation(indices.begin(), indices.end()));
-
-    cout << "\nTotaal: " << count << " permutaties" << endl;
 }
 
 int main() {
@@ -79,12 +85,12 @@ int main() {
         string text = readFile("../viginereplus/01-OPGAVE-viginereplus.txt");
         cout << "Ingelezen: " << text.length() << " tekens" << endl;
 
-        vector<vector<char>> matrix = textToMatrix(text, 10);
+        vector<vector<char>> matrix = textToMatrix(text, 139);
         cout << "Matrix: " << matrix.size() << " x " << matrix[0].size() << endl;
 
         writeColumnsToFile(matrix, "../viginereplus/output_columns.txt");
 
-        cout << "Genereren permutaties..." << endl;
+        cout << "Genereren van permutaties..." << endl;
         generatePermutations(matrix);
 
     } catch (const exception& e) {
