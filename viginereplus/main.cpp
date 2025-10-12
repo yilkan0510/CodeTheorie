@@ -48,12 +48,10 @@ int main() {
         cout << "Totaal aantal tekens: " << ciphertext.length() << endl;
 
         int num_columns = 10;
-        int column_length = 139;
-        vector<string> columns;
+        vector<string> columns(num_columns);
 
-        for (int i = 0; i < num_columns; ++i) {
-            string col = ciphertext.substr(i * column_length, column_length);
-            columns.push_back(col);
+        for (int i = 0; i < ciphertext.length(); ++i) {
+            columns[i % num_columns] += ciphertext[i];
         }
 
         writeColumnsToFile(columns, "../viginereplus/output_columns.txt");
