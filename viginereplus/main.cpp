@@ -82,13 +82,13 @@ void generatePermutations(const vector<vector<char>>& matrix) {
 
 int main() {
     try {
-        string text = readFile("../viginereplus/01-OPGAVE-viginereplus.txt");
+        string text = readFile("../../viginereplus/01-OPGAVE-viginereplus.txt");
         cout << "Ingelezen: " << text.length() << " tekens" << endl;
 
         vector<vector<char>> matrix = textToMatrix(text, 139);
         cout << "Matrix: " << matrix.size() << " x " << matrix[0].size() << endl;
 
-        writeColumnsToFile(matrix, "../viginereplus/output_columns.txt");
+        writeColumnsToFile(matrix, "../../viginereplus/output_columns.txt");
 
         cout << "Genereren van permutaties..." << endl;
         generatePermutations(matrix);
