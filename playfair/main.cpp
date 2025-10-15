@@ -47,7 +47,7 @@ int main() {
         std::string quadgrams_path = (basePath / "data" / "spanish_quadgrams.txt").string();
         std::string output_filepath = (basePath / "playfair" / "decrypted_solution.txt").string();
 
-        const int MAX_ITERATIONS = 5000000;
+        const int MAX_ITERATIONS = 3000000;
 
         // --- INITIALISATIE ---
         std::cout << "Laden van quadgrams van: " << quadgrams_path << std::endl;
@@ -60,20 +60,22 @@ int main() {
         Playfair cipher;
         std::mt19937 rng(std::random_device{}());
 
-        std::string parent_key = "ABCDEFGHIKLMNOPQRSTUVWXYZ";
-        std::shuffle(parent_key.begin(), parent_key.end(), rng);
+//        used in begin. we are starting from a better key now. no need to shuffle
+//        std::string parent_key = "ABCDEFGHIKLMNOPQRSTUVWXYZ";
+//        std::shuffle(parent_key.begin(), parent_key.end(), rng);
+        std::string parent_key = "YTVWXIGABRQELCMHUZDFSKNOP";
+        std::string best_key = parent_key;
 
         cipher.setKey(parent_key);
         double parent_score = scorer.score(cipher.decrypt(ciphertext));
 
-        std::string best_key = parent_key;
         double best_score = parent_score;
 
         // --- SIMULATED ANNEALING LOOP ---
         std::cout << "\nStarten van de simulated annealing aanval..." << std::endl;
 
-        double temperature = 30.0;
-        double cooling_rate = 0.99998;
+        double temperature = 50.0;
+        double cooling_rate = 0.999995;
         int stagnation_limit = 20000;
         int stagnation_counter = 0;
 
@@ -82,7 +84,18 @@ int main() {
 
         for (int i = 0; i < MAX_ITERATIONS; ++i) {
             std::string child_key = parent_key;
-            std::swap(child_key[dist(rng)], child_key[dist(rng)]);
+            int choice = rng() % 2;  // choose between two mutation types
+
+            if (choice == 0) {
+                // Type 1: swap two random letters
+                int a = dist(rng), b = dist(rng);
+                std::swap(child_key[a], child_key[b]);
+            } else {
+                // Type 2: reverse a random section (helps larger changes)
+                int start = dist(rng), end = dist(rng);
+                if (start > end) std::swap(start, end);
+                std::reverse(child_key.begin() + start, child_key.begin() + end);
+            }
 
             cipher.setKey(child_key);
             double child_score = scorer.score(cipher.decrypt(ciphertext));
@@ -110,11 +123,16 @@ int main() {
             if (stagnation_counter >= stagnation_limit) {
                 std::cout << "\n--- Stagnatie bereikt. Herstart bij iteratie " << i << " ---\n" << std::endl;
 
-                std::shuffle(parent_key.begin(), parent_key.end(), rng);
-                cipher.setKey(parent_key);
-                parent_score = scorer.score(cipher.decrypt(ciphertext));
-                stagnation_counter = 0;
-                temperature = 20.0;
+//        used in begin. we are starting from a better key now. no need to shuffle
+//                std::shuffle(parent_key.begin(), parent_key.end(), rng);
+
+            parent_key = best_key;
+            int a = dist(rng), b = dist(rng);
+            std::swap(parent_key[a], parent_key[b]);
+            cipher.setKey(parent_key);
+            parent_score = scorer.score(cipher.decrypt(ciphertext));
+            stagnation_counter = 0;
+            temperature = 20.0;
             }
         }
 
