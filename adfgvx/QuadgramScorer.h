@@ -1,4 +1,3 @@
-// playfair/QuadgramScorer.h
 #ifndef PLAYFAIR_QUADGRAMSCORER_H
 #define PLAYFAIR_QUADGRAMSCORER_H
 
@@ -8,10 +7,10 @@
 #include <fstream>
 #include <cmath>
 #include <numeric>
+#include <cctype>
 
 class QuadgramScorer {
 public:
-    // Constructor laadt de frequenties uit een bestand
     explicit QuadgramScorer(const std::string& quadgram_filepath) {
         std::ifstream file(quadgram_filepath);
         if (!file.is_open()) {
@@ -21,33 +20,36 @@ public:
         std::string quadgram;
         long long count;
         long long total_count = 0;
-
         std::map<std::string, long long> counts;
+
         while (file >> quadgram >> count) {
             counts[quadgram] = count;
             total_count += count;
         }
 
-        // Bereken log-waarschijnlijkheden voor numerieke stabiliteit
         for (auto const& [key, val] : counts) {
             log_probabilities[key] = log10(static_cast<double>(val) / total_count);
         }
 
-        // Een "bodem" score voor quadgrams die niet in onze lijst staan
         floor_prob = log10(0.01 / total_count);
     }
 
-    // Berekent de fitness-score van een gegeven tekst
     double score(const std::string& text) const {
-        double total_score = 0.0;
-        for (size_t i = 0; i < text.length() - 3; ++i) {
-            std::string quad = text.substr(i, 4);
-            auto it = log_probabilities.find(quad);
-            if (it != log_probabilities.end()) {
-                total_score += it->second;
-            } else {
-                total_score += floor_prob;
+        std::string clean;
+        clean.reserve(text.size());
+        for (char c : text) {
+            if (std::isalpha(static_cast<unsigned char>(c))) {
+                clean += std::toupper(static_cast<unsigned char>(c));
             }
+        }
+
+        if (clean.size() < 4) return floor_prob * 4;
+
+        double total_score = 0.0;
+        for (size_t i = 0; i < clean.length() - 3; ++i) {
+            std::string quad = clean.substr(i, 4);
+            auto it = log_probabilities.find(quad);
+            total_score += (it != log_probabilities.end()) ? it->second : floor_prob;
         }
         return total_score;
     }
@@ -57,4 +59,4 @@ private:
     double floor_prob;
 };
 
-#endif //PLAYFAIR_QUADGRAMSCORER_H
+#endif // PLAYFAIR_QUADGRAMSCORER_H
