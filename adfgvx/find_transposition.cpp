@@ -70,8 +70,13 @@ void worker_function(int thread_id, const std::string* ciphertext, const Quadgra
                      std::vector<PermutationResult>* thread_results) {
 
     ADFGVX cipher;
-    std::mt19937 rng(std::random_device{}() + thread_id);
+    std::mt19937  rng(std::random_device{}() + thread_id);
     const int ITERATIONS_PER_PERMUTATION = 20000;
+
+    // --- NIEUW: Variabelen om het lokale record van deze thread bij te houden ---
+    double best_score_in_thread = -999999.0;
+    std::vector<int> best_key_in_thread;
+    // --- EINDE NIEUW ---
 
     for (size_t i = start_index; i < end_index; ++i) {
         const auto& current_transpo_perm = (*all_permutations)[i];
@@ -81,7 +86,7 @@ void worker_function(int thread_id, const std::string* ciphertext, const Quadgra
 
         cipher.setKeys(parent_square_key, current_transpo_perm);
         std::string parent_plain = cipher.decrypt(*ciphertext);
-        double parent_score = parent_plain.empty() ? -1e9 : scorer->score(parent_plain);
+        double parent_score = parent_plain.empty() ? -1e9 : scorer->score_tolerant(parent_plain);
         double best_score_for_this_perm = parent_score;
 
         double temperature = 20.0;
@@ -100,7 +105,7 @@ void worker_function(int thread_id, const std::string* ciphertext, const Quadgra
             std::string child_plain = cipher.decrypt(*ciphertext);
             if (child_plain.empty()) continue;
 
-            double child_score = scorer->score(child_plain);
+            double child_score = scorer->score_tolerant(child_plain);
             if (child_score > parent_score || exp((child_score - parent_score) / temperature) > std::uniform_real_distribution<>(0.0, 1.0)(rng)) {
                 parent_score = child_score; parent_square_key = child_square_key;
             }
@@ -120,21 +125,34 @@ void worker_function(int thread_id, const std::string* ciphertext, const Quadgra
 
         thread_results->push_back({best_score_for_this_perm, current_transpo_perm});
 
-        // --- DUBBELE FEEDBACK LOGICA ---
+        // --- NIEUW: Check en print voor lokaal record van de thread ---
+        if (best_score_for_this_perm > best_score_in_thread) {
+            best_score_in_thread = best_score_for_this_perm;
+            best_key_in_thread = current_transpo_perm;
+
+            // Gebruik de mutex om de output netjes te houden
+            std::lock_guard<std::mutex> lock(cout_mutex);
+            std::cout << "[Thread " << thread_id << "] Nieuw LOKAAL record! Score: " << best_score_in_thread << " met sleutel: ";
+            for(int k : best_key_in_thread) std::cout << k << " ";
+            std::cout << std::endl;
+        }
+        // --- EINDE NIEUW ---
+
+        // --- DUBBELE FEEDBACK LOGICA (voor globaal record) ---
         double current_best = best_overall_score;
         if (best_score_for_this_perm > current_best) {
             if (best_overall_score.compare_exchange_strong(current_best, best_score_for_this_perm)) {
                 std::lock_guard<std::mutex> lock(cout_mutex);
-                std::cout << "[Thread " << thread_id << "] NIEUW ALGEMEEN RECORD! Score: " << best_score_for_this_perm << " met sleutel: ";
+                std::cout << ">>> [Thread " << thread_id << "] NIEUW ALGEMEEN RECORD! Score: " << best_score_for_this_perm << " met sleutel: ";
                 for(int k : current_transpo_perm) std::cout << k << " ";
-                std::cout << std::endl;
+                std::cout << " <<<" << std::endl;
             }
         }
 
         permutations_processed++;
         if (permutations_processed % 100 == 0) {
             std::lock_guard<std::mutex> lock(cout_mutex);
-            std::cout << "Progress: " << permutations_processed << "/5040..." << " (Huidig record: " << best_overall_score << ")" << std::endl;
+            std::cout << "Progress: " << permutations_processed << "/" << all_permutations->size() << "... (Huidig record: " << best_overall_score << ")" << std::endl;
         }
     }
 }
@@ -143,7 +161,7 @@ int main() {
     try {
         std::filesystem::path basePath = "../../";
         std::string ciphertext_path = (basePath / "adfgvx" / "03-OPGAVE-adfgvx.txt").string();
-        std::string quadgrams_path = (basePath / "data" / "english_quadgrams.txt").string();
+        std::string quadgrams_path = (basePath / "data" / "spaceless_english_quadgrams.txt").string();
 
         std::cout << "Laden van quadgrams van: " << quadgrams_path << std::endl;
         QuadgramScorer scorer(quadgrams_path);
@@ -157,23 +175,34 @@ int main() {
 
         std::cout << "--- FASE 1: Starten van PARALLELLE, GRONDIGE brute-force aanval op transpositie-sleutel ---" << std::endl;
 
-        unsigned int num_threads = std::thread::hardware_concurrency();
-        std::cout << "Detecteerde " << num_threads << " threads om te gebruiken." << std::endl;
+unsigned int num_threads = std::thread::hardware_concurrency();
+        if (num_threads == 0) { // Fallback voor als hardware_concurrency() 0 retourneert
+            num_threads = 1;
+        }
 
         std::vector<std::vector<int>> all_permutations;
         std::vector<int> p = {0, 1, 2, 3, 4, 5, 6};
         do {
             all_permutations.push_back(p);
         } while (std::next_permutation(p.begin(), p.end()));
-        std::cout << all_permutations.size() << " permutaties gegenereerd om te testen." << std::endl;
+
+        size_t total_perms = all_permutations.size();
+        std::cout << total_perms << " permutaties gegenereerd om te testen." << std::endl;
+
+        // Bepaal het daadwerkelijke aantal te gebruiken threads (veiligheidscheck)
+        unsigned int threads_to_use = std::min<unsigned int>(num_threads, static_cast<unsigned int>(total_perms));
+        std::cout << "Detecteerde " << num_threads << " threads, gebruiken er " << threads_to_use << "." << std::endl;
 
         std::vector<std::thread> threads;
-        std::vector<std::vector<PermutationResult>> results_per_thread(num_threads);
-        size_t chunk_size = all_permutations.size() / num_threads;
+        std::vector<std::vector<PermutationResult>> results_per_thread(threads_to_use);
+        size_t chunk_size = total_perms / threads_to_use;
+        std::cout << "Elke thread verwerkt circa " << chunk_size << " permutaties." << std::endl;
 
-        for (unsigned int i = 0; i < num_threads; ++i) {
+        for (unsigned int i = 0; i < threads_to_use; ++i) {
             size_t start = i * chunk_size;
-            size_t end = (i == num_threads - 1) ? all_permutations.size() : start + chunk_size;
+            // Gebruik 'threads_to_use' voor de check van de laatste thread
+            size_t end = (i == threads_to_use - 1) ? total_perms : start + chunk_size;
+
             threads.emplace_back(worker_function, i, &ciphertext, &scorer, &all_permutations, start, end, &results_per_thread[i]);
         }
 

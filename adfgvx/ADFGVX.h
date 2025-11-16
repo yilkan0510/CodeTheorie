@@ -81,52 +81,48 @@ private:
     std::map<std::string, char> coords_to_char;
 
     // Reverses the columnar transposition stage.
-    std::string undoColumnarTransposition(const std::string& ciphertext) const {
-        int num_cols = transposition_order.size();
-        if (num_cols == 0) return "";
+std::string undoColumnarTransposition(const std::string& ciphertext) const {
+    int num_cols = transposition_order.size();
+    if (num_cols == 0) return "";
 
-        // Validate that transposition_order is a permutation
-        std::vector<bool> seen(num_cols, false);
-        for (int v : transposition_order) {
-            if (v < 0 || v >= num_cols || seen[v]) return "";
-            seen[v] = true;
-        }
+    int text_len = ciphertext.length();
+    int base_col_len = text_len / num_cols;
+    int long_cols = text_len % num_cols;
 
-        int text_len = ciphertext.length();
-        int base_col_len = text_len / num_cols;
-        int long_cols = text_len % num_cols; // Number of columns that are one character longer
+    // --- NIEUWE, EENVOUDIGERE LOGICA ---
 
-        // Create a vector to hold the columns of the ciphertext
-        std::vector<std::string> columns(num_cols);
-        int current_pos = 0;
-
-        // Reconstruct the columns in their original (pre-transposition) order
-        for (int i = 0; i < num_cols; ++i) {
-            int original_col_index = transposition_order[i];
-            int len_this_col = base_col_len + (original_col_index < long_cols ? 1 : 0);
-
-            if (current_pos + len_this_col > text_len) {
-                return "";
-            }
-            columns[original_col_index] = ciphertext.substr(current_pos, len_this_col);
-            current_pos += len_this_col;
-        }
-
-        // Determine the max column height
-        int max_col_len = base_col_len + (long_cols > 0 ? 1 : 0);
-
-        // Reconstruct the intermediate text by reading across the rows
-        std::string intermediate_text;
-        intermediate_text.reserve(text_len);
-        for (int row = 0; row < max_col_len; ++row) {
-            for (int col = 0; col < num_cols; ++col) {
-                if (row < columns[col].length()) {
-                    intermediate_text += columns[col][row];
-                }
-            }
-        }
-        return intermediate_text;
+    // Stap 1: Bepaal de lengte van elke kolom in de *gelezen* (gesorteerde) volgorde.
+    std::vector<int> col_lengths(num_cols);
+    for (int i = 0; i < num_cols; ++i) {
+        int original_col_index = transposition_order[i];
+        col_lengths[i] = base_col_len + (original_col_index < long_cols ? 1 : 0);
     }
+
+    // Stap 2: Maak een tabel (vector van strings) en vul deze met de juiste stukken ciphertext.
+    std::vector<std::string> columns(num_cols);
+    int current_pos = 0;
+    for (int i = 0; i < num_cols; ++i) {
+        int original_col_index = transposition_order[i];
+        int len = col_lengths[i];
+        columns[original_col_index] = ciphertext.substr(current_pos, len);
+        current_pos += len;
+    }
+
+    // --- EINDE NIEUWE LOGICA ---
+
+    // Stap 3: Lees de tabel rij voor rij uit. Dit deel was al correct.
+    std::string intermediate_text;
+    intermediate_text.reserve(text_len);
+    int max_rows = base_col_len + (long_cols > 0 ? 1 : 0);
+    for (int row = 0; row < max_rows; ++row) {
+        for (int col = 0; col < num_cols; ++col) {
+            if (row < columns[col].length()) {
+                intermediate_text += columns[col][row];
+            }
+        }
+    }
+    return intermediate_text;
+}
 
     // Reverses the substitution stage (converts digraphs back to single characters).
     std::string performSubstitution(const std::string& intermediate_text) const {
