@@ -40,14 +40,31 @@ std::string convertMorseToADFGVX(const std::string& morse_code) {
         {".-",   'A'}, {"-..",  'D'}, {"..-.", 'F'},
         {"--.",  'G'}, {"...-", 'V'}, {"-..-", 'X'}
     };
+
     std::string adfgvx_text;
-    std::stringstream ss(morse_code);
-    std::string single_morse_char;
-    while (std::getline(ss, single_morse_char, '/')) {
-        if (morse_map.count(single_morse_char)) {
-            adfgvx_text += morse_map.at(single_morse_char);
+    std::string current_morse_char;
+
+    for (char c : morse_code) {
+        if (c == '.' || c == '-') {
+            current_morse_char += c;
+        } else if (c == '/') {
+            if (!current_morse_char.empty()) {
+                if (morse_map.count(current_morse_char)) {
+                    adfgvx_text += morse_map.at(current_morse_char);
+                }
+                current_morse_char.clear();
+            }
+        }
+        // Negeer alle andere karakters (spaties, newlines, etc.)
+    }
+
+    // Vergeet het laatste karakter niet als het bestand niet eindigt op een '/'
+    if (!current_morse_char.empty()) {
+        if (morse_map.count(current_morse_char)) {
+            adfgvx_text += morse_map.at(current_morse_char);
         }
     }
+
     return adfgvx_text;
 }
 

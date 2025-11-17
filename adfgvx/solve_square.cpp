@@ -1,4 +1,3 @@
-// solve_square.cpp - DE ECHTE FINALE VERSIE
 #include <iostream>
 #include <string>
 #include <vector>
@@ -15,19 +14,33 @@
 #include "QuadgramScorer.h"
 #include "ADFGVX.h"
 
-// Functies blijven hetzelfde
 std::string convertMorseToADFGVX(const std::string& morse_code) {
-    const std::map<std::string, char> morse_map = {{".-", 'A'}, {"-..", 'D'}, {"..-.", 'F'}, {"--.", 'G'}, {"...-", 'V'}, {"-..-", 'X'}};
+    const std::map<std::string, char> morse_map = {
+        {".-",   'A'}, {"-..",  'D'}, {"..-.", 'F'},
+        {"--.",  'G'}, {"...-", 'V'}, {"-..-", 'X'}
+    };
     std::string adfgvx_text;
-    std::stringstream ss(morse_code);
-    std::string single_morse_char;
-    while (std::getline(ss, single_morse_char, '/')) {
-        if (morse_map.count(single_morse_char)) {
-            adfgvx_text += morse_map.at(single_morse_char);
+    std::string current_morse_char;
+    for (char c : morse_code) {
+        if (c == '.' || c == '-') {
+            current_morse_char += c;
+        } else if (c == '/') {
+            if (!current_morse_char.empty()) {
+                if (morse_map.count(current_morse_char)) {
+                    adfgvx_text += morse_map.at(current_morse_char);
+                }
+                current_morse_char.clear();
+            }
+        }
+    }
+    if (!current_morse_char.empty()) {
+        if (morse_map.count(current_morse_char)) {
+            adfgvx_text += morse_map.at(current_morse_char);
         }
     }
     return adfgvx_text;
 }
+
 std::string loadFileContent(const std::string& filepath) {
     std::ifstream file(filepath);
     if (!file.is_open()) throw std::runtime_error("Kon bestand niet openen: " + filepath);
@@ -56,14 +69,13 @@ int main() {
 
         std::cout << "--- FASE 2: Starten van definitieve aanval op het Polybius-vierkant ---\n" << std::endl;
 
-        // DE SLEUTEL DIE JOUW PROGRAMMA HEEFT GEVONDEN.
-        std::vector<int> best_transpo_key = {TEMP};
+        std::vector<int> best_transpo_key = {4, 0, 6, 2, 1, 3, 5};
 
         std::cout << "Gebruiken van bewezen transpositie-sleutel: ";
         for(int k : best_transpo_key) std::cout << k << " ";
         std::cout << std::endl;
 
-        const int ITERATIONS_FOR_SQUARE_SEARCH = 5000000;
+        const int ITERATIONS_FOR_SQUARE_SEARCH = 10000000;
 
         std::string parent_square_key = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         std::shuffle(parent_square_key.begin(), parent_square_key.end(), rng);
@@ -77,10 +89,8 @@ int main() {
 
         double temperature = 100.0;
         double cooling_rate = 0.999995;
-        int stagnation_counter = 0;
-        const int stagnation_limit = 500000;
 
-        for (int i = 0; i < ITERATIONS_FOR_SQUARE_SEARCH; ++i) {
+        for (long long i = 0; i < ITERATIONS_FOR_SQUARE_SEARCH; ++i) {
              if (i > 0 && i % 50000 == 0) {
                 std::cout << "Iter: " << i / 1000 << "k | Huidige: " << parent_score << " | Beste: " << overall_best_score << " | Temp: " << temperature << std::endl;
             }
@@ -90,11 +100,6 @@ int main() {
             int choice = mutation_choice(rng);
 
             if (choice < 60) {
-                // beperking enkel letters
-//                 int pos_a = -1, pos_b = -1;
-//                 while (pos_a == -1 || !std::isalpha(child_square_key[pos_a])) { pos_a = std::uniform_int_distribution<int>(0, 35)(rng); }
-//                 while (pos_b == -1 || pos_b == pos_a || !std::isalpha(child_square_key[pos_b])) { pos_b = std::uniform_int_distribution<int>(0, 35)(rng); }
-//                 std::swap(child_square_key[pos_a], child_square_key[pos_b]);
                  int pos_a = std::uniform_int_distribution<int>(0, 35)(rng);
                  int pos_b = std::uniform_int_distribution<int>(0, 35)(rng);
                  std::swap(child_square_key[pos_a], child_square_key[pos_b]);
@@ -118,23 +123,11 @@ int main() {
                 overall_best_score = parent_score;
                 best_square_key = parent_square_key;
                 best_plaintext = cipher.decrypt(ciphertext);
-                stagnation_counter = 0;
                 std::cout << "\n>>> NIEUW RECORD <<<" << " Score: " << overall_best_score << std::endl;
-                std::cout << "    Tekst: " << best_plaintext.substr(0, 80) << "...\n" << std::endl;
-            } else {
-                stagnation_counter++;
+                std::cout << "    Tekst: " << best_plaintext.substr(0, 120) << "...\n" << std::endl;
             }
 
             temperature *= cooling_rate;
-            if(stagnation_counter > stagnation_limit){
-                std::cout << "\n--- STAGNATIE! NUCLEAIRE RESET ---\n" << std::endl;
-                temperature = 60.0; // Reset temperatuur
-                stagnation_counter = 0;
-                // GOOI DE HUIDIGE SLEUTEL WEG EN BEGIN VOLLEDIG OPNIEUW
-                parent_square_key = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-                std::shuffle(parent_square_key.begin(), parent_square_key.end(), rng);
-                parent_score = scorer.score_strict(cipher.decrypt(ciphertext));
-            }
         }
 
         std::cout << "\n\n--- Aanval voltooid ---" << std::endl;
