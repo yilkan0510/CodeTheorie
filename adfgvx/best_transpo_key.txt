@@ -1,0 +1,13 @@
+--- BRUTE-FORCE VOLTOOID ---
+Top 10 beste transpositie-sleutels gevonden:
+
+ #1: Score = -2.73 | Sleutel: 4 0 6 2 1 3 5
+ #2: Score = -173.47 | Sleutel: 4 6 0 2 1 3 5
+ #3: Score = -193.42 | Sleutel: 5 1 3 2 0 6 4
+ #4: Score = -211.38 | Sleutel: 5 3 0 1 2 6 4
+ #5: Score = -223.27 | Sleutel: 5 0 3 1 2 6 4
+ #6: Score = -225.17 | Sleutel: 4 1 6 2 0 3 5
+ #7: Score = -248.05 | Sleutel: 4 0 6 1 2 3 5
+ #8: Score = -248.06 | Sleutel: 4 6 3 1 0 2 5
+ #9: Score = -255.14 | Sleutel: 2 5 4 6 1 0 3
+ #10: Score = -261.02 | Sleutel: 4 6 5 1 0 2 3

@@ -7,7 +7,7 @@ Dit C++ programma zoekt de oplossing van de Vigenère-plus-opgave uit `01-OPGAVE
 - Compileer en run vanuit de root van deze map:
   ```bash
   g++ -std=c++17 -O3 vigenereplus_solver.cpp -o vigenereplus_solver
-  ./vigenere_solver
+  ./vigenereplus_solver
   ```
 - Het script leest automatisch de ciphertext uit `01-OPGAVE-viginereplus.txt`. Wil je een ander bestand gebruiken, pas het pad in `main` aan.
 - Runtime: totale run duurt enkele minuten, maar al na een paar seconden verschijnt de juiste plaintext bij transpositie breedte 6.
