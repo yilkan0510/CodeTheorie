@@ -176,7 +176,8 @@ void worker_function(int thread_id, const std::string* ciphertext, const Quadgra
 
 int main() {
     try {
-        std::filesystem::path basePath = "../../";
+        // Start vanuit de map adfgvx/ zodat basePath klopt.
+        std::filesystem::path basePath = "../";
         std::string ciphertext_path = (basePath / "adfgvx" / "03-OPGAVE-adfgvx.txt").string();
         std::string quadgrams_path = (basePath / "data" / "spaceless_english_quadgrams.txt").string();
 

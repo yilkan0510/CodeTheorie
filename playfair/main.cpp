@@ -42,7 +42,8 @@ std::string loadAndPrepareCiphertext(const std::string& filepath) {
 int main() {
     try {
         // --- CONFIGURATIE ---
-        std::filesystem::path basePath = "../../";
+        // Start dit programma vanuit de map playfair/ zodat basePath klopt.
+        std::filesystem::path basePath = "../";
         std::string ciphertext_path = (basePath / "playfair" / "02-OPGAVE-playfair.txt").string();
         std::string quadgrams_path = (basePath / "data" / "spanish_quadgrams.txt").string();
         std::string output_filepath = (basePath / "playfair" / "decrypted_solution.txt").string();
@@ -61,9 +62,9 @@ int main() {
         std::mt19937 rng(std::random_device{}());
 
 //        used in begin. we are starting from a better key now. no need to shuffle
-//        std::string parent_key = "ABCDEFGHIKLMNOPQRSTUVWXYZ";
-//        std::shuffle(parent_key.begin(), parent_key.end(), rng);
-        std::string parent_key = "YTVWXIGABRQELCMHUZDFSKNOP";
+        std::string parent_key = "ABCDEFGHIKLMNOPQRSTUVWXYZ";
+        std::shuffle(parent_key.begin(), parent_key.end(), rng);
+        //std::string parent_key = "YTVWXIGABRQELCMHUZDFSKNOP";
         std::string best_key = parent_key;
 
         cipher.setKey(parent_key);
