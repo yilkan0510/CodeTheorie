@@ -1,3 +1,0 @@
-add_executable(find_transposition_adfgvx find_transposition.cpp)
-
-add_executable(solve_square_adfgvx solve_square.cpp)
