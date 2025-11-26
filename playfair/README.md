@@ -2,7 +2,7 @@
 
 Deze C++ kraker vindt automatisch de Playfair-sleutel en plaintext uit `02-OPGAVE-playfair.txt` met simulated annealing en quadgram-scores.
 
-## Hoe runnen (zonder CMake)
+## Hoe runnen
 - Vereist: `g++` (C++17).
 - Compileer en run **in de map `playfair/`** (basePath is `../`):
   ```bash
@@ -15,7 +15,7 @@ Deze C++ kraker vindt automatisch de Playfair-sleutel en plaintext uit `02-OPGAV
 ## Gebruikte logica (stappenplan)
 1) **Preprocess input**: lees ciphertext, filter op letters, maak alles uppercase, vervang `J`→`I`, en zorg dat het aantal karakters even is (laatste char droppen indien nodig).
 2) **Laad taalmodel**: lees Spaanse quadgram-frequenties en bouw een scorer die een log-likelihood/score teruggeeft.
-3) **Initialiseer sleutel**: begin vanaf een (goede) startkey (`YTVWXIGABRQELCMHUZDFSKNOP`) voor het 5x5 Playfair-rooster (I/J samengevoegd).
+3) **Initialiseer sleutel**: begin vanaf een (goede) startkey (`YTVWXIGABRQELCMHUZDFSKNOP`) voor het 5x5 Playfair-rooster (I/J samengevoegd). Origineel begonnen met (`ABCDEFGHIKLMNOPQRSTUVWXYZ`).
 4) **Simulated annealing loop**:
    - Mutaties: ofwel twee letters swappen, of een substring omdraaien.
    - Scoren: decrypt met de kandidaat-sleutel en bereken de quadgram-score.

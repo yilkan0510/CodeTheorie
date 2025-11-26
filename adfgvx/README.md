@@ -2,7 +2,7 @@
 
 Kraker voor de ADFGVX-opgave (`03-OPGAVE-adfgvx.txt`). Stap 1 brute-force’t de transpositie-sleutel, stap 2 zoekt het beste Polybius-vierkant. Morsecode wordt eerst naar A/D/F/G/V/X omgezet.
 
-## Hoe runnen (zonder CMake, vanuit `adfgvx/`)
+## Hoe runnen
 - Vereist: `g++` (C++17); quadgrams uit `../data/spaceless_english_quadgrams.txt`.
 - Compileer en run **in de map `adfgvx/`** (basePath is `../`):
   ```bash
@@ -15,7 +15,7 @@ Kraker voor de ADFGVX-opgave (`03-OPGAVE-adfgvx.txt`). Stap 1 brute-force’t de
 - Output/logs komen in `adfgvx/result.txt` (relatief t.o.v. repo-root).
 
 ## Gebruikte logica (stappenplan)
-1) **Inlezen & morse-prep**: laad de morse-cipher, verwijder alle whitespace, parse morse-sequenties tot A/D/F/G/V/X (dropt onbekende tokens).
+1) **Inlezen & morse-prep**: laad de morse-cipher, verwijder alle whitespace, parse morse-sequenties tot A/D/F/G/V/X.
 2) **Basisvalidatie**: zorg dat de lengte even is (laatste char droppen indien oneven), want ADFGVX decode werkt per digraf.
 3) **Taalmodel laden**: laad Engelse quadgram-frequenties en bouw twee scorers: tolerant (fase 1) en strikt (fase 2).
 4) **Fase 1 – transpositie brute-force** (`find_transposition_adfgvx`):
@@ -26,7 +26,7 @@ Kraker voor de ADFGVX-opgave (`03-OPGAVE-adfgvx.txt`). Stap 1 brute-force’t de
    - Bewaar de best scorende permutatie.
 5) **Fase 2 – square verfijnen** (`solve_square_adfgvx`):
    - Neem de beste transpositie-sleutel uit fase 1.
-   - Zoek ~10M iteraties naar het beste Polybius-square met simulated annealing (swaps of substring-reversals), strikte quadgram-score.
+   - Zoek ~10M iteraties (antwoord vind je vroeger) naar het beste Polybius-square met simulated annealing (swaps of substring-reversals), strikte quadgram-score.
    - Log periodiek iteratie/score/temp en update bij elk nieuw record de sleutel + plaintext.
 6) **Resultaat opslaan**: schrijf beste transpositie, square, score en volledige plaintext naar `adfgvx/result.txt`.
 
