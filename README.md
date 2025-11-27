@@ -7,4 +7,4 @@ Zie de README’s per onderdeel:
 - `viginereplus/README.md`
 - `adfgvx/README.md`
 
-Door: Adam Boussta en Yilmaz Ozhan
+Door: Adam Boustta en Yilmaz Ozhan
